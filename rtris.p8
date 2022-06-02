@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 36
 __lua__
--- main functions
+--main functions
 
 function _init()
  cls(7)
@@ -14,7 +14,8 @@ end
 
 function _update60()
 	handle_input(player_tet)
-	gravity(player_tet, 52)
+ gravity(player_tet)
+-- debug_s=level_lines
 end
 
 function _draw()
@@ -22,15 +23,30 @@ function _draw()
 	draw_hud()
 	draw_board()
  draw_tet(player_tet,70,60)
- draw_debug()
+-- draw_debug()
 end
 -->8
--- gameplay logic
+--gameplay logic
+
+--sideways: 23, then 9 
+
+--should i implement the
+--2 frame delay that the og
+--game has???
+
+--startlevel * 10 + 10 for the
+--first level increase, after
+--this the level increases once
+--every 10 lines.
 
 function init_board()
+ hold_input=false
+ s_level=2 --starting level
  score1=0
  score2=0
- level=0
+ level=s_level
+ lines=8
+ level_lines=lines
  board = matrix()
  local tet = i_tet()
  spawn_tet(tet)
@@ -41,6 +57,8 @@ function spawn_tet(tet)
 end
 
 function place_tet(tet)
+ hold_input=true
+ d_press=false
  for p in all(tet.shape) do
   local s = p[1]
   local x = tet.x+p[2]
@@ -61,14 +79,42 @@ function check_rows(tet)
   end
  end
  if #full_rows > 0 then
-  remove_rows(board,full_rows)
-  line_score(#full_rows)
+  clear_lines(board,full_rows)
  end
+end
+
+function clear_lines(b,lines)
+ remove_rows(b,lines)
+ line_score(#lines)
+ add_to_lines(#lines)
+end
+
+function add_to_lines(x)
+ lines += x
+ level_lines += x
+ if(lines>9999)lines=9999
+ if level==s_level then
+  local n = (s_level*10)+10
+  if level_lines >= n then
+   level+=1
+   level_lines-=n
+  end
+ else
+		if level_lines >= 10 then
+   level+=1
+   level_lines-=10
+  end
+ end
+ 
+--startlevel * 10 + 10 for the
+--first level increase, after
+--this the level increases once
+--every 10 lines.
 end
 
 function line_score(n)
  local x=0
- if(n==1)x=1100
+ if(n==1)x=40
  if(n==2)x=100
  if(n==3)x=300
  if(n==4)x=1200
@@ -160,12 +206,24 @@ function matrix()
 end
 
 function handle_input(tet)
+-- debug_s=hold_input
+ if btn()==0 then
+  hold_input=false
+  d_press=false
+ end
+ if hold_input==false then
+  if(btnp(⬇️))d_press=true
+ end
  if(btnp(➡️))move_right(tet)
- if(btnp(⬇️))move_down(tet)
  if(btnp(⬅️))move_left(tet)
--- if(btnp(⬆️))move_up(tet)
  if(btnp(❎))rot_right(tet)
  if(btnp(🅾️))rot_left(tet)
+ if btn(➡️) then
+  d_press=false
+ end
+ if btn(⬅️) then
+  d_press=false
+ end
 end
 
 function rot_right(tet)
@@ -229,7 +287,18 @@ function move_down(tet)
  end
 end
 
-function gravity(tet,n)
+function gravity(tet)
+ local lookup={
+  49,45,41,37,33,28,22,17,11,10,
+	 9,8,7,6,6,5,5,4,4,3
+ }
+ lookup[0]=53
+ local n=0
+ if d_press then
+	  n=2
+	else
+	 n=lookup[level]-1
+	end
  if tet.counter > n then
   move_down(tet)
   tet.counter = 1
@@ -239,7 +308,7 @@ function gravity(tet,n)
 end
 
 -->8
--- blocks
+--blocks
 
 function all_tets()
  return {
@@ -415,11 +484,11 @@ function z_tet()
 	}
 end
 -->8
--- graphics
+--graphics
 
--- todo: move everything left 1
--- pixel so the score fits
--- better
+--todo: move everything left 1
+--pixel so the score fits
+--better
 
 function draw_debug()
  print(
@@ -490,7 +559,7 @@ function draw_hud()
  spr(85, 103,start+3)
  spr(68, 110,start+3)
  spr(75, 117,start+3)
- spr(78, 110,start+11)
+ draw_num(level,110,start+11)
  
   -- draw "lines" text box
  local start=start+24
@@ -500,7 +569,7 @@ function draw_hud()
  spr(77, 103,start+3)
  spr(68, 110,start+3)
  spr(82, 117,start+3)
- spr(78, 110,start+11)
+ draw_num(lines,110,start+11)
  
  -- draw "up next" box
  fancybox(89,89,127,127)
@@ -565,11 +634,11 @@ function draw_tet(tet)
  end
 end
 -->8
--- helper functions
+--helper functions
 
--- i really should add some
--- standard functions here,
--- like fmap and fold
+--i really should add some
+--standard functions here,
+--like fmap and fold
 
 function chars(s)
 	local o={}
@@ -608,8 +677,8 @@ function not_elem(t,x)
  return true
 end
 
--- rotate a matrix 90 degrees
--- clockwise
+--rotate a matrix 90 degrees
+--clockwise
 function rot_cw(m)
  local x_max = #m
  local y_max = #m[1]
@@ -678,14 +747,14 @@ __gfx__
 70770007700770077007700770770007700777777007777770077007707770077770077770070077700700777007777770777007707700077007700770077777
 70770007700000777700007770000077700000077007777777000007707770077700007777000777700770077000000770777007707770077700007770077777
 77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777
-77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777770000000000000000
-77000077700000777700007770000007707770077077700770777007707770077007700770000007777777777777777777777777777777770000000000000000
-70077707700770077007777777700777707770077077700770777007770700777007700777770007777777777777777777077707777777770000000000000000
-70077707700770077700007777700777707770077077700770707007777007777700007777700077777777777700007777707077777777770000000000000000
-70070707700000777777000777700777707770077077700770000007770007777770077777000777777777777700007777770777777777770000000000000000
-70077077700707777077000777700777707700077707007770070007700770777770077770007777700777777777777777707077777777770000000000000000
-77000707700770077700007777700777770000777770077770777007707777077770077770000007700777777777777777077707777777770000000000000000
-77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777770000000000000000
+77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777700000000
+77000077700000777700007770000007707770077077700770777007707770077007700770000007777777777777777777777777777777777700700700000000
+70077707700770077007777777700777707770077077700770777007770700777007700777770007777777777777777777077707777777777076066000000000
+70077707700770077700007777700777707770077077700770707007777007777700007777700077777777777700007777707077777777777076666000000000
+70070707700000777777000777700777707770077077700770000007770007777770077777000777777777777700007777770777777777777066666000000000
+70077077700707777077000777700777707700077707007770070007700770777770077770007777700777777777777777707077777777777706660700000000
+77000707700770077700007777700777770000777770077770777007707777077770077770000007700777777777777777077707777777777770607700000000
+77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777077700000000
 77777777777777777777777777777777777777777777777777777777777777777777777777777777000000000000000000000000000000000000000000000000
 77000077777007777700007770000077770000777000007777000077700000077700007777000077000000000000000000000000000000000000000000000000
 70077007770007777077000777770007700700777007777770077777777770077077000770770007000000000000000000000000000000000000000000000000
