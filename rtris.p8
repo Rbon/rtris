@@ -15,7 +15,8 @@ end
 function _update60()
 	handle_input(player_tet)
  gravity(player_tet)
--- debug_s=level_lines
+ if(not d_press)d_count=0
+ debug_s=d_count
 end
 
 function _draw()
@@ -23,7 +24,7 @@ function _draw()
 	draw_hud()
 	draw_board()
  draw_tet(player_tet,70,60)
--- draw_debug()
+ draw_debug()
 end
 -->8
 --gameplay logic
@@ -40,6 +41,7 @@ end
 --every 10 lines.
 
 function init_board()
+ d_count=0 --soft drop points
  hold_input=false
  s_level=2 --starting level
  score1=0
@@ -59,6 +61,8 @@ end
 function place_tet(tet)
  hold_input=true
  d_press=false
+ add_score(d_count-1)
+ d_count=0
  for p in all(tet.shape) do
   local s = p[1]
   local x = tet.x+p[2]
@@ -280,9 +284,10 @@ function move_up(tet)
 end
 
 function move_down(tet)
- tet.y += 1
+ tet.y+=1
+ if(d_press)d_count+=1
  if(collide(tet)) then
-	 tet.y -= 1
+	 tet.y-=1
  	place_tet(tet)	
  end
 end
