@@ -13,17 +13,16 @@ function _init()
 end
 
 function _update60()
-	handle_input(player_tet)
- gravity(player_tet)
- if(not d_press)d_count=0
--- debug_s=d_count
+
+ up_game()
 end
 
 function _draw()
  cls(7)
 	draw_hud()
 	draw_board()
- draw_tet(player_tet,70,60)
+	draw_tet(player_tet,70,60)
+ draw_parts()
 -- draw_debug()
 end
 -->8
@@ -35,23 +34,38 @@ end
 --2 frame delay that the og
 --game has???
 
---startlevel * 10 + 10 for the
---first level increase, after
---this the level increases once
---every 10 lines.
-
 function init_board()
+ parts={} --particle list
+ counters={} --animations
+ stop_t=0 --stop updating
  d_count=0 --soft drop points
  hold_input=false
  s_level=0 --starting level
  score1=0
  score2=0
  level=s_level
- lines=8
+ lines=0
  level_lines=lines
  board=matrix()
  next_tet = rnd(all_tets())()
  spawn_tet()
+end
+
+--update in-game
+function up_game()
+ debug_s=stop_t
+	if #counters==0 then
+		handle_input(player_tet)
+	 gravity(player_tet)
+	 if(not d_press)d_count=0
+ end
+ for x in all(counters) do
+  x:f()
+  x.t-=1
+  if x.t==0 then
+   del(counters,x)
+  end
+ end
 end
 
 function place_tet(tet)
@@ -68,7 +82,6 @@ function place_tet(tet)
  	mset(x+20,y,s)
  end
  check_rows(tet)
- spawn_tet()
 end
 
 function spawn_tet()
@@ -88,7 +101,9 @@ function check_rows(tet)
   end
  end
  if #full_rows > 0 then
-  clear_lines(board,full_rows)
+  flash(full_rows)
+ else
+  spawn_tet()
  end
 end
 
@@ -114,11 +129,6 @@ function add_to_lines(x)
    level_lines-=10
   end
  end
- 
---startlevel * 10 + 10 for the
---first level increase, after
---this the level increases once
---every 10 lines.
 end
 
 function line_score(n)
@@ -163,18 +173,6 @@ function fall_rows(b,bot)
 		end
 	end
 end
-
-
---function get_ys(tet)
--- local ys = {}
--- for p in all(tet.shape) do
---  local y = tet.y+p[3]
---  if(not_elem(p,y))add(ys,y)
--- end
--- return ys
---end
-
-
 
 -- check for out of bounds
 function oob(tet)
@@ -493,10 +491,6 @@ end
 -->8
 --graphics
 
---todo: move everything left 1
---pixel so the score fits
---better
-
 function draw_debug()
  print(
   debug_s,
@@ -517,7 +511,48 @@ function draw_board()
 --	map(21,17,8,120,1,1)
 end
 
+--draw particles
+function draw_parts()
+ for p in all(parts) do
+  local f=p[1]
+  local args=p[2]
+  f(unpack(args))
+  p[3]-=1
+  if p[3]==0 then
+   del(parts,p)
+  end
+ end
+end
 
+function flash(rows)
+ local c={}
+ c.rows=rows
+ c.t=100
+ c.f=function(self)
+  local pc=6 --particle color
+  local pt=10 --particle time
+  if self.t==20 then
+   pc=7
+   pt=20
+  end
+  if self.t%20==0 then
+   for r in all(self.rows) do
+	   add(parts,{
+	    rectfill,{
+		    7,(r*7)+1,77,(r*7)+8,pc
+		   },
+		   pt
+		  })
+   end
+  end
+  if self.t==1 then
+   clear_lines(board,self.rows)
+   spawn_tet()
+  end
+ end
+ add(counters,c)
+ stop_t=60
+end
 
 function draw_hud()
  map(0,0,0,0,16,16)
@@ -551,10 +586,10 @@ function draw_hud()
  if score2 > 0 then
   draw_num(score2, 99,start+19)
  	if score1<100 then
-   spr(96,107,start+19)
+   spr(96,106,start+19)
   end
   if score1<10 then
-   spr(96,114,start+19)
+   spr(96,113,start+19)
   end
  end
  
