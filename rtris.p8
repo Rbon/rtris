@@ -16,7 +16,7 @@ function _update60()
 	handle_input(player_tet)
  gravity(player_tet)
  if(not d_press)d_count=0
- debug_s=d_count
+-- debug_s=d_count
 end
 
 function _draw()
@@ -24,7 +24,7 @@ function _draw()
 	draw_hud()
 	draw_board()
  draw_tet(player_tet,70,60)
- draw_debug()
+-- draw_debug()
 end
 -->8
 --gameplay logic
@@ -49,13 +49,9 @@ function init_board()
  level=s_level
  lines=8
  level_lines=lines
- board = matrix()
- local tet = i_tet()
- spawn_tet(tet)
-end
-
-function spawn_tet(tet)
- player_tet = tet
+ board=matrix()
+ next_tet = rnd(all_tets())()
+ spawn_tet()
 end
 
 function place_tet(tet)
@@ -71,7 +67,15 @@ function place_tet(tet)
  	mset(x+20,y,s)
  end
  check_rows(tet)
- next_tet()
+ spawn_tet()
+end
+
+function spawn_tet()
+ player_tet = next_tet
+ player_tet.x = 4
+ player_tet.y = 1
+ local tet = rnd(all_tets())()
+ next_tet = tet
 end
 
 function check_rows(tet)
@@ -169,10 +173,7 @@ end
 -- return ys
 --end
 
-function next_tet()
- local tet = rnd(all_tets())()
- spawn_tet(tet)
-end
+
 
 -- check for out of bounds
 function oob(tet)
@@ -578,9 +579,9 @@ function draw_hud()
  
  -- draw "up next" box
  fancybox(89,89,127,127)
- local next_tet = o_tet()
- next_tet.x=14
- next_tet.y=14
+-- local next_tet = o_tet()
+ next_tet.x=13.4
+ next_tet.y=14.2
  draw_tet(next_tet)
  
 end
